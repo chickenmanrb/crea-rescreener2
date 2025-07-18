@@ -170,7 +170,7 @@ const REScreeningTool = () => {
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
-    const MAX_FILE_SIZE_MB = 10;
+    const MAX_FILE_SIZE_MB = 4;
 
     if (!file) return;
 
