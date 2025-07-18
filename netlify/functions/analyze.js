@@ -94,13 +94,18 @@ exports.handler = async function (event, context) {
     // Get the secret API key from the environment variables
     const apiKey = process.env.GEMINI_API_KEY;
 
+    console.log('Environment check:');
+    console.log('- NODE_ENV:', process.env.NODE_ENV);
+    console.log('- Available env vars:', Object.keys(process.env).filter(key => key.includes('GEMINI') || key.includes('API')));
+    console.log('- GEMINI_API_KEY exists:', !!apiKey);
+
     if (!apiKey) {
       console.error("GEMINI_API_KEY is not configured on the server.");
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
-          error: "API key is not configured on the server. Deployment is missing the GEMINI_API_KEY environment variable." 
+          error: "API key is not configured on the server. Please set the GEMINI_API_KEY environment variable in your Netlify site settings." 
         })
       };
     }
