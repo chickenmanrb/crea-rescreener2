@@ -128,7 +128,7 @@ const REScreeningTool = () => {
 
       } catch (err) {
         console.error("PDF analysis failed:", err);
-        setError(`Unable to analyze the document. Error: ${err.message}`);
+        setError(`Unable to analyze the document. ${err.message.includes('API key') ? 'Please configure the GEMINI_API_KEY in Netlify environment variables.' : `Error: ${err.message}`}`);
         pdfAnalysis = `Analysis failed: ${err.message}`;
       }
     } else {
