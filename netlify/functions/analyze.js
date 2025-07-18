@@ -109,7 +109,7 @@ exports.handler = async function (event, context) {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
-          error: "API key is not configured on the server. Please set the GEMINI_API_KEY environment variable in your Netlify site settings." 
+          error: "API key is not configured on the server. Please set the GEMINI_API_KEY environment variable in your Netlify site settings."
         })
       };
     }
@@ -214,9 +214,7 @@ exports.handler = async function (event, context) {
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ 
-          error: "Failed to read response from Google AI API"
-        })
+        body: JSON.stringify({ error: "Failed to read response from Google AI API" })
       };
     }
 
@@ -230,9 +228,7 @@ exports.handler = async function (event, context) {
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ 
-          error: `Invalid JSON response from Google AI API. Response: ${responseText.substring(0, 500)}` 
-        })
+        body: JSON.stringify({ error: `Invalid JSON response from Google AI API. Response: ${responseText.substring(0, 500)}` })
       };
     }
 
@@ -262,7 +258,7 @@ exports.handler = async function (event, context) {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(finalResponse),
+      body: JSON.stringify(finalResponse)
     };
 
   } catch (error) {
