@@ -96,8 +96,12 @@ exports.handler = async function (event, context) {
 
     console.log('Environment check:');
     console.log('- NODE_ENV:', process.env.NODE_ENV);
-    console.log('- Available env vars:', Object.keys(process.env).filter(key => key.includes('GEMINI') || key.includes('API')));
+    console.log('- All env var keys:', Object.keys(process.env));
+    console.log('- GEMINI-related env vars:', Object.keys(process.env).filter(key => key.includes('GEMINI')));
+    console.log('- API-related env vars:', Object.keys(process.env).filter(key => key.includes('API')));
     console.log('- GEMINI_API_KEY exists:', !!apiKey);
+    console.log('- GEMINI_API_KEY type:', typeof apiKey);
+    console.log('- GEMINI_API_KEY length:', apiKey ? apiKey.length : 'N/A');
 
     if (!apiKey) {
       console.error("GEMINI_API_KEY is not configured on the server.");
