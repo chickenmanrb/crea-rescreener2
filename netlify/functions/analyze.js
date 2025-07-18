@@ -66,6 +66,27 @@ exports.handler = async function (event, context) {
 
     console.log('File data received, length:', fileData.length);
     
+    // Validate base64 data
+    if (typeof fileData !== 'string' || fileData.length === 0) {
+      console.error('Invalid file data format');
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: "Invalid file data format" })
+      };
+    }
+    
+    // Check if it looks like valid base64
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+    if (!base64Regex.test(fileData)) {
+      console.error('File data does not appear to be valid base64');
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: "File data is not valid base64" })
+      };
+    }
+    
     // Get the secret API key from the environment variables
     const apiKey = process.env.GEMINI_API_KEY;
 
@@ -81,6 +102,10 @@ exports.handler = async function (event, context) {
     }
     
     console.log('API key found, preparing request...');
+    
+    // Log API key status (without exposing the actual key)
+    console.log('API key length:', apiKey.length);
+    console.log('API key starts with:', apiKey.substring(0, 10) + '...');
     
     const prompt = `Analyze this real estate document for key insights relevant to investment screening. Focus on:
       1. Property details (location, size, type, age, condition)
@@ -114,6 +139,8 @@ exports.handler = async function (event, context) {
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
     
     console.log("Making request to Google AI API...");
+    console.log("Request payload size:", JSON.stringify(payload).length);
+    console.log("API URL:", apiUrl.substring(0, 80) + '...');
     
     const apiResponse = await fetch(apiUrl, {
       method: 'POST',
@@ -126,13 +153,21 @@ exports.handler = async function (event, context) {
     });
 
     console.log("API Response status:", apiResponse.status);
-    console.log("API Response headers:", apiResponse.headers.raw());
+    console.log("API Response headers:", JSON.stringify([...apiResponse.headers.entries()]));
 
     if (!apiResponse.ok) {
       let errorBody;
       try {
         errorBody = await apiResponse.text();
         console.error("Google AI API Error Response:", errorBody);
+        
+        // Try to parse the error as JSON for more details
+        try {
+          const errorJson = JSON.parse(errorBody);
+          console.error("Parsed error details:", JSON.stringify(errorJson, null, 2));
+        } catch (jsonParseError) {
+          console.error("Error response is not valid JSON");
+        }
       } catch (textError) {
         console.error("Failed to read error response:", textError);
         errorBody = `HTTP ${apiResponse.status} - Unable to read error details`;
@@ -142,7 +177,8 @@ exports.handler = async function (event, context) {
         statusCode: apiResponse.status,
         headers,
         body: JSON.stringify({ 
-          error: `Google AI API Error (${apiResponse.status}): ${errorBody}` 
+          error: `Google AI API Error (${apiResponse.status}): ${errorBody}`,
+          statusCode: apiResponse.status
         })
       };
     }

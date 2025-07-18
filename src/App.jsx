@@ -119,7 +119,7 @@ const REScreeningTool = () => {
           result = JSON.parse(responseText);
         } catch (parseError) {
           console.error('Failed to parse success response:', parseError);
-          throw new Error('Received invalid response from analysis service. Please try again.');
+          throw new Error(`Request failed with status: ${response.status}. Response: ${responseText.substring(0, 200)}`);
         }
         
         pdfAnalysis = result.analysis;
