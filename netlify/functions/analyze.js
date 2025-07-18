@@ -1,8 +1,7 @@
 // This is the secure, server-side function that will call the Google AI API.
 // It lives in `netlify/functions/analyze.js`
 
-// Use node-fetch for a reliable, server-side fetch implementation
-const fetch = require('node-fetch');
+// Use built-in fetch API (available in Node.js 18+)
 
 exports.handler = async function (event, context) {
   console.log('Function called with method:', event.httpMethod);
