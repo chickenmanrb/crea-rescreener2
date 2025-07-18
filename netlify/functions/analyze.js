@@ -75,6 +75,11 @@ exports.handler = async function (event, context) {
       };
     }
     
+    // Log file data info for debugging
+    console.log('File data type:', typeof fileData);
+    console.log('File data length:', fileData.length);
+    console.log('File data sample (first 50 chars):', fileData.substring(0, 50));
+    
     // Check if it looks like valid base64
     const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
     if (!base64Regex.test(fileData)) {
@@ -139,7 +144,15 @@ exports.handler = async function (event, context) {
     
     console.log("Making request to Google AI API...");
     console.log("Request payload size:", JSON.stringify(payload).length);
-    console.log("API URL:", apiUrl.substring(0, 80) + '...');
+    console.log("API URL (without key):", apiUrl.split('?key=')[0]);
+    console.log("Using model: gemini-2.0-flash");
+    
+    // Validate payload structure
+    console.log("Payload structure check:");
+    console.log("- contents exists:", !!payload.contents);
+    console.log("- contents length:", payload.contents?.length);
+    console.log("- first content has parts:", !!payload.contents?.[0]?.parts);
+    console.log("- parts length:", payload.contents?.[0]?.parts?.length);
     
     const apiResponse = await fetch(apiUrl, {
       method: 'POST',
@@ -147,8 +160,7 @@ exports.handler = async function (event, context) {
         'Content-Type': 'application/json',
         'User-Agent': 'Real-Estate-Screening-Tool/1.0'
       },
-      body: JSON.stringify(payload),
-      timeout: 30000 // 30 second timeout
+      body: JSON.stringify(payload)
     });
 
     console.log("API Response status:", apiResponse.status);
@@ -176,7 +188,7 @@ exports.handler = async function (event, context) {
         statusCode: apiResponse.status,
         headers,
         body: JSON.stringify({ 
-          error: `Google AI API Error (${apiResponse.status}): ${errorBody}`,
+          error: `Google AI API Error (${apiResponse.status}): ${errorBody.substring(0, 1000)}`,
           statusCode: apiResponse.status
         })
       };

@@ -103,10 +103,12 @@ const REScreeningTool = () => {
           try {
             const responseText = await response.text();
             console.log('Error response text:', responseText);
+            console.log('Full error response:', responseText);
             errorResult = JSON.parse(responseText);
           } catch (parseError) {
             console.error('Failed to parse error response:', parseError);
-            throw new Error(`Request failed with status: ${response.status}. Unable to parse error response.`);
+            const responseText = await response.text().catch(() => 'Unable to read response');
+            throw new Error(`Request failed with status: ${response.status}. Response: ${responseText.substring(0, 500)}`);
           }
           throw new Error(errorResult.error || `Request failed with status: ${response.status}`);
         }
