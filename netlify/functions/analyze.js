@@ -275,7 +275,7 @@ exports.handler = async function (event, context) {
       body: JSON.stringify({ 
         error: `Server error: ${error.message}`,
         details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      }),
+      })
     };
   }
 };
