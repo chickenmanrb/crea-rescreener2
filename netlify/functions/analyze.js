@@ -5,6 +5,9 @@
 const fetch = require('node-fetch');
 
 exports.handler = async function (event, context) {
+  console.log('Function called with method:', event.httpMethod);
+  console.log('Request headers:', event.headers);
+  
   // Set CORS headers for all responses
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -15,6 +18,7 @@ exports.handler = async function (event, context) {
 
   // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
+    console.log('Handling OPTIONS request');
     return {
       statusCode: 200,
       headers,
@@ -24,6 +28,7 @@ exports.handler = async function (event, context) {
 
   // We only accept POST requests
   if (event.httpMethod !== 'POST') {
+    console.log('Invalid method:', event.httpMethod);
     return { 
       statusCode: 405,
       headers,
@@ -32,10 +37,13 @@ exports.handler = async function (event, context) {
   }
 
   try {
+    console.log('Processing POST request...');
+    
     // Parse request body
     let requestBody;
     try {
       requestBody = JSON.parse(event.body || '{}');
+      console.log('Request body parsed successfully');
     } catch (parseError) {
       console.error("Failed to parse request body:", parseError);
       return {
@@ -48,6 +56,7 @@ exports.handler = async function (event, context) {
     const { fileData } = requestBody;
 
     if (!fileData) {
+      console.log('No file data provided');
       return {
         statusCode: 400,
         headers,
@@ -55,6 +64,8 @@ exports.handler = async function (event, context) {
       };
     }
 
+    console.log('File data received, length:', fileData.length);
+    
     // Get the secret API key from the environment variables
     const apiKey = process.env.GEMINI_API_KEY;
 
@@ -68,6 +79,8 @@ exports.handler = async function (event, context) {
         })
       };
     }
+    
+    console.log('API key found, preparing request...');
     
     const prompt = `Analyze this real estate document for key insights relevant to investment screening. Focus on:
       1. Property details (location, size, type, age, condition)
@@ -173,10 +186,13 @@ exports.handler = async function (event, context) {
 
     console.log("Analysis completed successfully, length:", analysisText.length);
 
+    const finalResponse = { analysis: analysisText };
+    console.log("Sending final response:", JSON.stringify(finalResponse).substring(0, 200));
+    
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ analysis: analysisText }),
+      body: JSON.stringify(finalResponse),
     };
 
   } catch (error) {

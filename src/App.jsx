@@ -86,8 +86,8 @@ const REScreeningTool = () => {
 
     if (inputs.uploadedFile) {
       try {
-        // The frontend now sends the data to our own serverless function
-        const response = await fetch('/api/analyze', {
+        console.log('Sending request to analyze function...');
+        const response = await fetch('/.netlify/functions/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -95,17 +95,38 @@ const REScreeningTool = () => {
           }),
         });
 
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
         if (!response.ok) {
-          const errorResult = await response.json();
+          let errorResult;
+          try {
+            const responseText = await response.text();
+            console.log('Error response text:', responseText);
+            errorResult = JSON.parse(responseText);
+          } catch (parseError) {
+            console.error('Failed to parse error response:', parseError);
+            throw new Error(`Request failed with status: ${response.status}. Unable to parse error response.`);
+          }
           throw new Error(errorResult.error || `Request failed with status: ${response.status}`);
         }
 
-        const result = await response.json();
+        let result;
+        try {
+          const responseText = await response.text();
+          console.log('Success response text length:', responseText.length);
+          console.log('Success response preview:', responseText.substring(0, 200));
+          result = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('Failed to parse success response:', parseError);
+          throw new Error('Received invalid response from analysis service. Please try again.');
+        }
+        
         pdfAnalysis = result.analysis;
 
       } catch (err) {
         console.error("PDF analysis failed:", err);
-        setError(`Unable to analyze the document. Details: ${err.message}`);
+        setError(`Unable to analyze the document. Error: ${err.message}`);
         pdfAnalysis = `Analysis failed: ${err.message}`;
       }
     } else {
