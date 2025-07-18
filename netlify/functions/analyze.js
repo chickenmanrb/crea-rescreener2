@@ -203,16 +203,30 @@ exports.handler = async function (event, context) {
       };
     }
 
-    let result;
+    // Read the response text once
+    let responseText;
     try {
-      const responseText = await apiResponse.text();
+      responseText = await apiResponse.text();
       console.log("Raw API response length:", responseText.length);
       console.log("Raw API response preview:", responseText.substring(0, 200));
-      
+    } catch (readError) {
+      console.error("Failed to read API response:", readError);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: "Failed to read response from Google AI API"
+        })
+      };
+    }
+
+    // Parse the JSON response
+    let result;
+    try {
       result = JSON.parse(responseText);
     } catch (jsonError) {
       console.error("Failed to parse API response as JSON:", jsonError);
-      const responseText = await apiResponse.text().catch(() => "Unable to read response");
+      console.error("Response text that failed to parse:", responseText.substring(0, 500));
       return {
         statusCode: 500,
         headers,
