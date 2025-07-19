@@ -53,59 +53,42 @@ exports.handler = async function (event, context) {
     }
 
     const { fileData } = requestBody;
-    const { extractedText } = requestBody;
 
-    // Support both old fileData format and new extractedText format
-    if (!fileData && !extractedText) {
+    if (!fileData) {
       console.log('No file data provided');
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: "No file data or extracted text provided" })
+        body: JSON.stringify({ error: "No file data provided" })
       };
     }
 
-    // Handle extracted text (new approach)
-    if (extractedText) {
-      console.log('Extracted text received, length:', extractedText.length);
-      
-      if (typeof extractedText !== 'string' || extractedText.trim().length === 0) {
-        console.error('Invalid extracted text format');
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: "Invalid extracted text format" })
-        };
-      }
-    } else {
-      // Handle legacy base64 file data
-      console.log('File data received, length:', fileData.length);
-      
-      // Validate base64 data
-      if (typeof fileData !== 'string' || fileData.length === 0) {
-        console.error('Invalid file data format');
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: "Invalid file data format" })
-        };
-      }
-      
-      // Log file data info for debugging
-      console.log('File data type:', typeof fileData);
-      console.log('File data length:', fileData.length);
-      console.log('File data sample (first 50 chars):', fileData.substring(0, 50));
-      
-      // Check if it looks like valid base64
-      const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
-      if (!base64Regex.test(fileData)) {
-        console.error('File data does not appear to be valid base64');
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: "File data is not valid base64" })
-        };
-      }
+    console.log('File data received, length:', fileData.length);
+    
+    // Validate base64 data
+    if (typeof fileData !== 'string' || fileData.length === 0) {
+      console.error('Invalid file data format');
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: "Invalid file data format" })
+      };
+    }
+    
+    // Log file data info for debugging
+    console.log('File data type:', typeof fileData);
+    console.log('File data length:', fileData.length);
+    console.log('File data sample (first 50 chars):', fileData.substring(0, 50));
+    
+    // Check if it looks like valid base64
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+    if (!base64Regex.test(fileData)) {
+      console.error('File data does not appear to be valid base64');
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: "File data is not valid base64" })
+      };
     }
     
     // Get the secret API key from the environment variables
@@ -145,49 +128,7 @@ exports.handler = async function (event, context) {
       5. Any red flags or concerns
       Provide a concise summary of the most important findings that would impact investment decision-making. Keep response under 500 words and focus on actionable insights.`;
     
-    let payload;
-    
-    if (extractedText) {
-      // Use extracted text approach (more efficient)
-      payload = {
-        contents: [{
-          role: "user",
-          parts: [
-            { text: `${prompt}\n\nDocument text:\n${extractedText}` }
-          ]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        }
-      };
-    } else {
-      // Use legacy base64 approach
-      payload = {
-        contents: [{
-          role: "user",
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                mimeType: "application/pdf",
-                data: fileData
-              }
-            }
-          ]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        }
-      };
-    }
-    
-    const payload_old = {
+    const payload = {
       contents: [{
         role: "user",
         parts: [
@@ -213,7 +154,7 @@ exports.handler = async function (event, context) {
     console.log("Making request to Google AI API...");
     console.log("Request payload size:", JSON.stringify(payload).length);
     console.log("API URL (without key):", apiUrl.split('?key=')[0]);
-    console.log("Using model: gemini-2.0-flash with", extractedText ? "extracted text" : "base64 PDF");
+    console.log("Using model: gemini-2.0-flash");
     
     // Validate payload structure
     console.log("Payload structure check:");

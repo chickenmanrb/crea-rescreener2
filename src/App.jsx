@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Calculator, TrendingUp, AlertTriangle, CheckCircle, XCircle, ArrowLeft, Loader2, UploadCloud, FileText, Trash2 } from 'lucide-react';
-import pdfParse from 'pdf-parse';
 
 // Component for the custom modal
 const Modal = ({ message, onClose }) => (
@@ -92,7 +91,7 @@ const REScreeningTool = () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            extractedText: inputs.uploadedFile.extractedText,
+            fileData: inputs.uploadedFile.data,
           }),
         });
 
@@ -171,7 +170,7 @@ const REScreeningTool = () => {
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
-    const MAX_FILE_SIZE_MB = 10; // Increased since we're only sending text now
+    const MAX_FILE_SIZE_MB = 4;
 
     if (!file) return;
 
@@ -186,34 +185,22 @@ const REScreeningTool = () => {
     }
 
     try {
-      // Extract text from PDF using pdf-parse
-      const arrayBuffer = await file.arrayBuffer();
-      const pdfData = await pdfParse(arrayBuffer);
-      const extractedText = pdfData.text;
-      
-      if (!extractedText || extractedText.trim().length === 0) {
-        setError("No text could be extracted from this PDF. The file may be image-based or corrupted.");
-        return;
-      }
-      
-      // Limit text length to prevent API issues (roughly 100k characters)
-      const maxTextLength = 100000;
-      const finalText = extractedText.length > maxTextLength 
-        ? extractedText.substring(0, maxTextLength) + "\n\n[Text truncated due to length...]"
-        : extractedText;
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result.split(",")[1];
+          resolve(base64);
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      });
       
       setInputs(prev => ({
         ...prev,
-        uploadedFile: { 
-          name: file.name, 
-          extractedText: finalText, 
-          size: file.size,
-          textLength: finalText.length
-        }
-      });
+        uploadedFile: { name: file.name, data: base64Data, size: file.size }
+      }));
     } catch (err) {
-      console.error("PDF parsing error:", err);
-      setError("Error extracting text from PDF. Please ensure the file is a valid, text-based PDF.");
+      setError("Error reading file. Please try again.");
     }
   };
 
@@ -290,9 +277,7 @@ const REScreeningTool = () => {
                                 <FileText className="w-5 h-5 text-green-600 flex-shrink-0"/>
                                 <div className="text-left overflow-hidden">
                                   <div className="text-sm font-medium text-gray-900 truncate">{inputs.uploadedFile.name}</div>
-                                  <div className="text-xs text-gray-500">
-                                    {(inputs.uploadedFile.size / 1024 / 1024).toFixed(2)} MB • {inputs.uploadedFile.textLength.toLocaleString()} characters extracted
-                                  </div>
+                                  <div className="text-xs text-gray-500">{(inputs.uploadedFile.size / 1024 / 1024).toFixed(2)} MB</div>
                                 </div>
                               </div>
                               <button onClick={removeFile} className="text-red-600 hover:text-red-800 p-1 hover:bg-red-50 rounded-full transition-colors flex-shrink-0" title="Remove file">
@@ -300,7 +285,7 @@ const REScreeningTool = () => {
                               </button>
                             </div>
                           )}
-                          <p className="text-xs text-gray-500 mt-2">Upload offering memorandum for AI analysis (optional). Text will be extracted locally.</p>
+                          <p className="text-xs text-gray-500 mt-2">Upload offering memorandum for AI analysis (optional).</p>
                         </div>
                       </div>
                     </div>
