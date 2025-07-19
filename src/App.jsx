@@ -210,7 +210,7 @@ const REScreeningTool = () => {
           size: file.size,
           textLength: finalText.length
         }
-      });
+      }));
     } catch (err) {
       console.error("PDF parsing error:", err);
       setError("Error extracting text from PDF. Please ensure the file is a valid, text-based PDF.");
