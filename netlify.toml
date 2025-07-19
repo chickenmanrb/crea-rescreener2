@@ -9,6 +9,10 @@
 [build]
   # This is the command to build your React app
   command = "npm run build"
+
+[dev]
+  framework = "#static"
+  targetPort = 5173
   # This is the directory that contains your built site
   publish = "dist"
   # This is where Netlify will find your serverless functions
