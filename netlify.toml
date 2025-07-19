@@ -10,10 +10,3 @@
   command = "npm run build"
   # This is the directory that contains your built site
   publish = "dist"
-
-# This rule redirects any requests from your app to /api/*
-# to the corresponding serverless function.
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
