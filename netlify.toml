@@ -4,6 +4,7 @@
 [dev]
   framework = "#static"
   targetPort = 5173
+  edge_functions = false
 
 [build]
   # This is the command to build your React app
