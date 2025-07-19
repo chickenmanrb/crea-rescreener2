@@ -183,7 +183,7 @@ const REScreeningTool = () => {
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
-    const MAX_FILE_SIZE_MB = 5; // Reduced to prevent Netlify CLI stream body size errors
+    const MAX_FILE_SIZE_MB = 10; // Reasonable limit for PDF analysis
 
     if (!file) return;
 
