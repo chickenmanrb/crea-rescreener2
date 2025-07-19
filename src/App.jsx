@@ -105,11 +105,19 @@ const REScreeningTool = () => {
             const responseText = await response.text();
             console.log('Error response text:', responseText);
             console.log('Full error response:', responseText);
-            errorResult = JSON.parse(responseText);
+            if (responseText.trim()) {
+              try {
+                errorResult = JSON.parse(responseText);
+              } catch (parseError) {
+                console.error('Failed to parse error response as JSON:', parseError);
+                errorResult = { error: responseText };
+              }
+            } else {
+              errorResult = { error: `Request failed with status: ${response.status}` };
+            }
           } catch (parseError) {
             console.error('Failed to parse error response:', parseError);
-            const responseText = await response.text().catch(() => 'Unable to read response');
-            throw new Error(`Request failed with status: ${response.status}. Response: ${responseText.substring(0, 500)}`);
+            throw new Error(`Request failed with status: ${response.status}. Unable to read response.`);
           }
           throw new Error(errorResult.error || `Request failed with status: ${response.status}`);
         }
@@ -119,10 +127,14 @@ const REScreeningTool = () => {
           const responseText = await response.text();
           console.log('Success response text length:', responseText.length);
           console.log('Success response preview:', responseText.substring(0, 200));
-          result = JSON.parse(responseText);
+          if (responseText.trim()) {
+            result = JSON.parse(responseText);
+          } else {
+            throw new Error('Empty response from server');
+          }
         } catch (parseError) {
           console.error('Failed to parse success response:', parseError);
-          throw new Error(`Request failed with status: ${response.status}. Response: ${responseText.substring(0, 200)}`);
+          throw new Error('Invalid response format from server');
         }
         
         pdfAnalysis = result.analysis;
