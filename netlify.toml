@@ -4,6 +4,8 @@
 [dev]
   command = "vite"
   targetPort = 5173
+  # Disable edge functions to avoid Deno requirement
+  edge_functions = false
 
 [build]
   # This is the command to build your React app
