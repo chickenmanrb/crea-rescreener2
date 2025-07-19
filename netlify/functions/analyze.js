@@ -37,13 +37,13 @@ exports.handler = async (event, context) => {
     }
 
     // Check if API key is configured
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
-          error: 'GEMINI_API_KEY not configured in environment variables' 
+          error: 'VITE_GEMINI_API_KEY not configured in environment variables' 
         }),
       };
     }
