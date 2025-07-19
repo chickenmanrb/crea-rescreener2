@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Calculator, TrendingUp, AlertTriangle, CheckCircle, XCircle, ArrowLeft, Loader2, UploadCloud, FileText, Trash2 } from 'lucide-react';
+import { extractTextFromPDF, truncateText } from './utils/pdfExtractor';
 
 // Component for the custom modal
 const Modal = ({ message, onClose }) => (
@@ -91,7 +92,7 @@ const REScreeningTool = () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            fileData: inputs.uploadedFile.data,
+            extractedText: inputs.uploadedFile.extractedText,
           }),
         });
 
@@ -170,7 +171,7 @@ const REScreeningTool = () => {
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
-    const MAX_FILE_SIZE_MB = 4;
+    const MAX_FILE_SIZE_MB = 10; // Increased since we're extracting text instead of sending full file
 
     if (!file) return;
 
@@ -185,22 +186,28 @@ const REScreeningTool = () => {
     }
 
     try {
-      const base64Data = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const base64 = reader.result.split(",")[1];
-          resolve(base64);
-        };
-        reader.onerror = () => reject(new Error("Failed to read file"));
-        reader.readAsDataURL(file);
-      });
+      // Extract text from PDF instead of converting to base64
+      const extractedText = await extractTextFromPDF(file);
+      
+      if (!extractedText || extractedText.trim().length === 0) {
+        setError("No text could be extracted from this PDF. Please ensure it contains readable text.");
+        return;
+      }
+      
+      // Truncate text to ensure it fits within API limits
+      const truncatedText = truncateText(extractedText);
       
       setInputs(prev => ({
         ...prev,
-        uploadedFile: { name: file.name, data: base64Data, size: file.size }
+        uploadedFile: { 
+          name: file.name, 
+          extractedText: truncatedText, 
+          originalSize: file.size,
+          textLength: truncatedText.length
+        }
       }));
     } catch (err) {
-      setError("Error reading file. Please try again.");
+      setError(`Error processing PDF: ${err.message}`);
     }
   };
 
@@ -277,7 +284,9 @@ const REScreeningTool = () => {
                                 <FileText className="w-5 h-5 text-green-600 flex-shrink-0"/>
                                 <div className="text-left overflow-hidden">
                                   <div className="text-sm font-medium text-gray-900 truncate">{inputs.uploadedFile.name}</div>
-                                  <div className="text-xs text-gray-500">{(inputs.uploadedFile.size / 1024 / 1024).toFixed(2)} MB</div>
+                                  <div className="text-xs text-gray-500">
+                                    {(inputs.uploadedFile.originalSize / 1024 / 1024).toFixed(2)} MB • {inputs.uploadedFile.textLength.toLocaleString()} chars extracted
+                                  </div>
                                 </div>
                               </div>
                               <button onClick={removeFile} className="text-red-600 hover:text-red-800 p-1 hover:bg-red-50 rounded-full transition-colors flex-shrink-0" title="Remove file">
