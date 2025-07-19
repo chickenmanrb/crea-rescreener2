@@ -4,8 +4,8 @@
 [dev]
   command = "vite"
   targetPort = 5173
-  # Explicitly disable edge functions and functions to avoid Deno requirement
-  functions = false
+  # Enable Netlify Functions (Node.js) but disable Edge Functions (Deno)
+  functions = "netlify/functions"
   edge_functions = false
 
 [build]
