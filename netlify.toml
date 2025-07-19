@@ -4,9 +4,7 @@
 [dev]
   command = "vite"
   targetPort = 5173
-  # Enable Netlify Functions (Node.js) but disable Edge Functions (Deno)
   functions = "netlify/functions"
-  edge_functions = false
 
 [build]
   # This is the command to build your React app
