@@ -4,7 +4,8 @@
 [dev]
   command = "vite"
   targetPort = 5173
-  # Disable edge functions to avoid Deno requirement
+  # Explicitly disable edge functions and functions to avoid Deno requirement
+  functions = false
   edge_functions = false
 
 [build]
