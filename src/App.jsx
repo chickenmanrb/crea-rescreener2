@@ -183,7 +183,7 @@ const REScreeningTool = () => {
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
-    const MAX_FILE_SIZE_MB = 10; // Increased since we're extracting text instead of sending full file
+    const MAX_FILE_SIZE_MB = 5; // Reduced to prevent Netlify CLI stream body size errors
 
     if (!file) return;
 
