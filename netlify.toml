@@ -5,8 +5,6 @@
   command = "vite"
   targetPort = 5173
   functions = "netlify/functions"
-  # Disable edge functions to avoid Deno requirement in WebContainer
-  edge_functions = false
 
 [build]
   # This is the command to build your React app
@@ -15,6 +13,8 @@
   publish = "dist"
   # This is where Netlify will find your serverless functions
   functions = "netlify/functions"
+  # Disable edge functions to avoid Deno requirement in WebContainer
+  edge_functions = false
 
 # This rule redirects any requests from your app to /api/*
 # to the corresponding serverless function.
