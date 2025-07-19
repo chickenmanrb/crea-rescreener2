@@ -224,6 +224,46 @@ const REScreeningTool = () => {
     return requiredFields.every(field => inputs[field] && inputs[field].toString().trim() !== '');
   };
 
+  const fillDefaultValues = () => {
+    const defaults = {
+      askingPrice: '50000000',
+      targetHold: '5',
+      targetIRR: '15.0',
+      targetEM: '1.8',
+      leverage: '70',
+      interestRate: '6.5',
+      exitCap: '5.0',
+      strategy: 'Value-add',
+      marketFocus: ''
+    };
+    
+    setInputs(prev => {
+      const updated = { ...prev };
+      Object.keys(defaults).forEach(key => {
+        if (!updated[key] || updated[key].toString().trim() === '') {
+          updated[key] = defaults[key];
+        }
+      });
+      return updated;
+    });
+  };
+
+  const canProceedWithPDFOnly = () => {
+    return inputs.uploadedFile && !isFormComplete();
+  };
+
+  const handleAnalysisClick = () => {
+    if (canProceedWithPDFOnly()) {
+      fillDefaultValues();
+      // Small delay to ensure state updates before analysis
+      setTimeout(() => {
+        performAnalysis();
+      }, 100);
+    } else {
+      performAnalysis();
+    }
+  };
+
   const CRELogo = ({ className = "h-12 w-12" }) => (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" viewBox="0 0 118.56 156.66">
       <defs>
@@ -358,7 +398,7 @@ const REScreeningTool = () => {
                 </div>
 
                 <div className="mt-10 text-center">
-                  <button onClick={performAnalysis} disabled={!isFormComplete() || isLoading} className={`px-12 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto disabled:cursor-not-allowed disabled:scale-100 ${isFormComplete() ? 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white' : 'bg-gray-300 text-gray-500'}`}>
+                  <button onClick={handleAnalysisClick} disabled={(!isFormComplete() && !inputs.uploadedFile) || isLoading} className={`px-12 py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 flex items-center gap-3 mx-auto disabled:cursor-not-allowed disabled:scale-100 ${(isFormComplete() || inputs.uploadedFile) ? 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white' : 'bg-gray-300 text-gray-500'}`}>
                     {isLoading ? <><Loader2 className="h-6 w-6 animate-spin" />Analyzing...</> : <><Calculator className="h-6 w-6" />Screen Investment</>}
                   </button>
                   <div className="mt-4 text-center">
@@ -366,9 +406,14 @@ const REScreeningTool = () => {
                       <strong>Disclaimer:</strong> For educational use only. Do not upload confidential materials. Use a sample or fictional deal to test this tool.
                     </p>
                   </div>
-                  {!isFormComplete() && !isLoading && (
+                  {!isFormComplete() && !inputs.uploadedFile && !isLoading && (
                     <p className="text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3 inline-block mt-4">
-                      Please complete all required fields to run the analysis.
+                      Please complete all required fields or upload a PDF to run the analysis.
+                    </p>
+                  )}
+                  {canProceedWithPDFOnly() && !isLoading && (
+                    <p className="text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg p-3 inline-block mt-4">
+                      PDF uploaded! Click "Screen Investment" to analyze with default values, or fill in custom parameters.
                     </p>
                   )}
                 </div>
