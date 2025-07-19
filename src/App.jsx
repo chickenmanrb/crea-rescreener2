@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Calculator, TrendingUp, AlertTriangle, CheckCircle, XCircle, ArrowLeft, Loader2, UploadCloud, FileText, Trash2 } from 'lucide-react';
-import { extractTextFromPDF, truncateText } from './utils/pdfExtractor';
+import { convertPDFToBase64 } from './utils/pdfExtractor';
 
 // Component for the custom modal
 const Modal = ({ message, onClose }) => (
@@ -92,7 +92,7 @@ const REScreeningTool = () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            extractedText: inputs.uploadedFile.extractedText,
+            fileData: inputs.uploadedFile.fileData,
           }),
         });
 
@@ -186,24 +186,15 @@ const REScreeningTool = () => {
     }
 
     try {
-      // Extract text from PDF instead of converting to base64
-      const extractedText = await extractTextFromPDF(file);
-      
-      if (!extractedText || extractedText.trim().length === 0) {
-        setError("No text could be extracted from this PDF. Please ensure it contains readable text.");
-        return;
-      }
-      
-      // Truncate text to ensure it fits within API limits
-      const truncatedText = truncateText(extractedText);
+      // Convert PDF to base64 for server-side processing
+      const fileData = await convertPDFToBase64(file);
       
       setInputs(prev => ({
         ...prev,
         uploadedFile: { 
           name: file.name, 
-          extractedText: truncatedText, 
+          fileData: fileData, 
           originalSize: file.size,
-          textLength: truncatedText.length
         }
       }));
     } catch (err) {
@@ -285,7 +276,7 @@ const REScreeningTool = () => {
                                 <div className="text-left overflow-hidden">
                                   <div className="text-sm font-medium text-gray-900 truncate">{inputs.uploadedFile.name}</div>
                                   <div className="text-xs text-gray-500">
-                                    {(inputs.uploadedFile.originalSize / 1024 / 1024).toFixed(2)} MB • {inputs.uploadedFile.textLength.toLocaleString()} chars extracted
+                                    {(inputs.uploadedFile.originalSize / 1024 / 1024).toFixed(2)} MB • Ready for analysis
                                   </div>
                                 </div>
                               </div>

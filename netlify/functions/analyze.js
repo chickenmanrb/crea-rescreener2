@@ -54,68 +54,45 @@ exports.handler = async function (event, context) {
 
     const { fileData } = requestBody;
 
-    // Support both old fileData (base64) and new extractedText formats
-    const { extractedText } = requestBody;
-    
-    if (!fileData && !extractedText) {
+    if (!fileData) {
       console.log('No file data provided');
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: "No file data or extracted text provided" })
+        body: JSON.stringify({ error: "No file data provided" })
       };
     }
 
-    // Handle text-based analysis (new approach)
-    if (extractedText) {
-      console.log('Extracted text received, length:', extractedText.length);
-      
-      if (typeof extractedText !== 'string' || extractedText.trim().length === 0) {
-        console.error('Invalid extracted text format');
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: "Invalid extracted text format" })
-        };
-      }
-      
-      // Use text-based analysis
-      return await analyzeExtractedText(extractedText, process.env.GEMINI_API_KEY, headers);
+    console.log('File data received, length:', fileData.length);
+    
+    // Validate base64 data
+    if (typeof fileData !== 'string' || fileData.length === 0) {
+      console.error('Invalid file data format');
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: "Invalid file data format" })
+      };
     }
     
-    // Handle legacy base64 file data (fallback)
-    if (fileData) {
-      console.log('File data received, length:', fileData.length);
-      
-      // Validate base64 data
-      if (typeof fileData !== 'string' || fileData.length === 0) {
-        console.error('Invalid file data format');
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: "Invalid file data format" })
-        };
-      }
-      
-      // Log file data info for debugging
-      console.log('File data type:', typeof fileData);
-      console.log('File data length:', fileData.length);
-      console.log('File data sample (first 50 chars):', fileData.substring(0, 50));
-      
-      // Check if it looks like valid base64
-      const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
-      if (!base64Regex.test(fileData)) {
-        console.error('File data does not appear to be valid base64');
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: "File data is not valid base64" })
-        };
-      }
-      
-      // Use legacy PDF analysis
-      return await analyzePDFFile(fileData, process.env.GEMINI_API_KEY, headers);
+    // Log file data info for debugging
+    console.log('File data type:', typeof fileData);
+    console.log('File data length:', fileData.length);
+    console.log('File data sample (first 50 chars):', fileData.substring(0, 50));
+    
+    // Check if it looks like valid base64
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+    if (!base64Regex.test(fileData)) {
+      console.error('File data does not appear to be valid base64');
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: "File data is not valid base64" })
+      };
     }
+    
+    // Use PDF analysis
+    return await analyzePDFFile(fileData, process.env.GEMINI_API_KEY, headers);
 
   } catch (error) {
     console.error('Unexpected error in analyze function:', error);
@@ -132,48 +109,7 @@ exports.handler = async function (event, context) {
   }
 };
 
-// New function to analyze extracted text
-async function analyzeExtractedText(extractedText, apiKey, headers) {
-  try {
-    console.log('API key found, preparing text analysis request...');
-    
-    const prompt = `Analyze this real estate document text for key insights relevant to investment screening. Focus on:
-      1. Property details (location, size, type, age, condition)
-      2. Financial metrics (NOI, rent roll, expenses, cap rates)
-      3. Market conditions and comparables
-      4. Risk factors and opportunities
-      5. Any red flags or concerns
-      Provide a concise summary of the most important findings that would impact investment decision-making. Keep response under 500 words and focus on actionable insights.
-      
-      Document text:
-      ${extractedText}`;
-    
-    const payload = {
-      contents: [{
-        role: "user",
-        parts: [{ text: prompt }]
-      }],
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 1024,
-      }
-    };
-    
-    return await callGeminiAPI(payload, apiKey, headers);
-    
-  } catch (error) {
-    console.error('Error in text analysis:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: `Text analysis error: ${error.message}` })
-    };
-  }
-}
-
-// Legacy function to analyze PDF files (kept for backward compatibility)
+// Function to analyze PDF files
 async function analyzePDFFile(fileData, apiKey, headers) {
   try {
     console.log('API key found, preparing PDF analysis request...');
