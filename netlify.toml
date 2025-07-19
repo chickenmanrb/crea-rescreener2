@@ -5,6 +5,8 @@
   command = "vite"
   targetPort = 5173
   functions = "netlify/functions"
+  # Disable edge functions to avoid Deno requirement in WebContainer
+  edge_functions = false
 
 [build]
   # This is the command to build your React app
