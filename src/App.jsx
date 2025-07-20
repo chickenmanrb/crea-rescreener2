@@ -137,7 +137,13 @@ Proceed with detailed due diligence. Property shows strong fundamentals with cle
       // Call the secure Netlify function for AI-powered analysis
       try {
         console.log('Calling Netlify function for analysis...');
-        const response = await fetch('/.netlify/functions/analyze', {
+        
+        // Use deployed function URL for development
+        const functionUrl = import.meta.env.DEV 
+          ? 'https://merry-blancmange-29b5cd.netlify.app/.netlify/functions/analyze'
+          : '/.netlify/functions/analyze';
+          
+        const response = await fetch(functionUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -202,12 +208,7 @@ Recommend proceeding with comprehensive due diligence and market analysis to val
 
       setAnalysis({
         returns,
-      // Use deployed function URL for development
-      const functionUrl = import.meta.env.DEV 
-        ? 'https://merry-blancmange-29b5cd.netlify.app/.netlify/functions/analyze'
-        : '/.netlify/functions/analyze';
-        
-      const response = await fetch(functionUrl, {
+        returnFeasibility,
         mandateFit,
         recommendation,
         targetIRR,
