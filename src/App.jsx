@@ -139,9 +139,7 @@ Proceed with detailed due diligence. Property shows strong fundamentals with cle
         console.log('Calling Netlify function for analysis...');
         
         // Use deployed function URL for development
-        const functionUrl = import.meta.env.DEV 
-          ? 'https://merry-blancmange-29b5cd.netlify.app/.netlify/functions/analyze'
-          : '/.netlify/functions/analyze';
+        const functionUrl = '/.netlify/functions/analyze';
           
         const response = await fetch(functionUrl, {
           method: 'POST',

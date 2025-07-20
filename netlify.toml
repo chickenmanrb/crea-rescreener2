@@ -6,6 +6,10 @@
   targetPort = 5173
   edge_functions = false
 
+[dev.env]
+  # Disable edge functions completely
+  NETLIFY_EXPERIMENTAL_BUILD_NODE_VERSION = "18"
+
 [build]
   # This is the command to build your React app
   command = "npm run build"
