@@ -128,10 +128,124 @@ Proceed with detailed due diligence. Property shows strong fundamentals with cle
     setIsLoading(true);
     setError(null);
     
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const pdfAnalysis = generatePDFAnalysis(inputs.uploadedFile?.name);
+      let pdfAnalysis;
+      
+      // Call the Netlify function for PDF analysis
+      if (inputs.uploadedFile) {
+        try {
+          const response = await fetch('/.netlify/functions/analyze', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              fileName: inputs.uploadedFile.name,
+              fileData: inputs.uploadedFile.fileData,
+              inputs: inputs
+            })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            pdfAnalysis = data.analysis;
+          } else {
+            throw new Error(`API call failed: ${response.status}`);
+          }
+        } catch (apiError) {
+          console.warn('API call failed, using fallback:', apiError);
+          pdfAnalysis = generatePDFAnalysis(inputs.uploadedFile.name);
+        }
+      } else {
+        pdfAnalysis = generatePDFAnalysis(null);
+      }
+      
+      const returns = calculateReturns();
+      const targetIRR = parseFloat(inputs.targetIRR) || 15;
+      const targetEM = parseFloat(inputs.targetEM) || 1.8;
+      
+      const irrScore = Math.min(100, (parseFloat(returns.irr) / targetIRR) * 100);
+      const emScore = Math.min(100, (parseFloat(returns.em) / targetEM) * 100);
+      const returnFeasibility = Math.round((irrScore + emScore) / 2);
+      
+      let recommendation = 'Pass';
+      let mandateFit = 'Weak';
+      
+      if (returnFeasibility > 80) {
+        recommendation = 'Advance';
+        mandateFit = 'Strong';
+      } else if (returnFeasibility > 60) {
+        recommendation = 'Monitor';
+        mandateFit = 'Medium';
+      }
+
+      setAnalysis({
+        returns,
+        returnFeasibility,
+        mandateFit,
+        recommendation,
+        targetIRR,
+        targetEM,
+        pdfAnalysis
+      });
+
+      setCurrentStep('results');
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      setError('Analysis failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const generatePDFAnalysis = (fileName) => {
+    // Generate demo analysis based on uploaded file
+    if (fileName) {
+      return `**Document Analysis for ${fileName}**
+
+**Property Overview:**
+- Multi-family residential property
+- Located in prime urban submarket  
+- 150 units across 3 buildings
+- Built in 1985, recently renovated common areas
+
+**Financial Highlights:**
+- Current NOI: $2.1M annually
+- Average rent: $1,850/month
+- Occupancy rate: 94%
+- Operating expense ratio: 42%
+
+**Market Analysis:**
+- Submarket rent growth: 4.2% annually
+- Low vacancy rates (2.8% average)
+- Strong employment fundamentals
+- Limited new supply pipeline
+
+**Investment Thesis:**
+- Value-add opportunity through unit renovations
+- Potential 15-20% rent increases post-renovation
+- Strong cash flow profile with upside potential
+- Defensive asset class in current market
+
+**Key Risks:**
+- Capital expenditure requirements
+- Regulatory rent control considerations
+- Interest rate sensitivity
+- Market saturation risk
+
+**Recommendation:**
+Proceed with detailed due diligence. Property shows strong fundamentals with clear value-add path. Consider sensitivity analysis on renovation costs and timeline.
+
+*Note: This is a demo analysis for educational purposes.*`;
+    } else {
+      return "No document was uploaded for analysis.";
+    }
+  };
+
+  const calculateReturns = () => {
     const returns = calculateReturns();
     const targetIRR = parseFloat(inputs.targetIRR) || 15;
     const targetEM = parseFloat(inputs.targetEM) || 1.8;
