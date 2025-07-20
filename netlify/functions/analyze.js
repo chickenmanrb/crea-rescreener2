@@ -1,5 +1,3 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-
 exports.handler = async (event, context) => {
   // Handle CORS
   const headers = {
@@ -9,7 +7,10 @@ exports.handler = async (event, context) => {
     'Content-Type': 'application/json'
   };
 
+  console.log('Function called with method:', event.httpMethod);
+
   if (event.httpMethod === 'OPTIONS') {
+    console.log('Handling CORS preflight');
     return {
       statusCode: 200,
       headers,
@@ -18,6 +19,7 @@ exports.handler = async (event, context) => {
   }
 
   if (event.httpMethod !== 'POST') {
+    console.log('Method not allowed:', event.httpMethod);
     return {
       statusCode: 405,
       headers,
@@ -26,13 +28,21 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { fileName, fileData, inputs } = JSON.parse(event.body);
+    console.log('Parsing request body...');
+    const requestBody = JSON.parse(event.body || '{}');
+    const { fileName, fileData, inputs } = requestBody;
+    
+    console.log('Request parsed successfully');
+    console.log('FileName:', fileName);
+    console.log('Has fileData:', !!fileData);
+    console.log('Inputs:', inputs);
     
     // Check if API key is configured
     const apiKey = process.env.GEMINI_API_KEY;
+    console.log('API Key configured:', !!apiKey);
+    
     if (!apiKey) {
       console.log('No GEMINI_API_KEY found, returning demo analysis');
-      // Return demo analysis if no API key
       return {
         statusCode: 200,
         headers,
@@ -77,22 +87,35 @@ Proceed with detailed due diligence. Property shows strong fundamentals with cle
       };
     }
 
-    console.log('Initializing Gemini AI...');
+    console.log('Attempting to load Google AI...');
+    
+    // Try to load the Google AI library
+    let GoogleGenerativeAI;
+    try {
+      const googleAI = require('@google/generative-ai');
+      GoogleGenerativeAI = googleAI.GoogleGenerativeAI;
+      console.log('Google AI loaded successfully');
+    } catch (importError) {
+      console.error('Failed to import Google AI:', importError);
+      throw new Error('Google AI library not available');
+    }
+
     // Initialize Gemini AI
+    console.log('Initializing Gemini AI...');
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Create analysis prompt
-    let prompt = `Analyze this real estate investment opportunity based on the following parameters:
+    const prompt = `Analyze this real estate investment opportunity based on the following parameters:
 
-Asking Price: $${inputs.askingPrice || 'Not provided'}
-Target Hold Period: ${inputs.targetHold || 'Not provided'} years
-Target IRR: ${inputs.targetIRR || 'Not provided'}%
-Target Equity Multiple: ${inputs.targetEM || 'Not provided'}x
-Leverage: ${inputs.leverage || 'Not provided'}%
-Interest Rate: ${inputs.interestRate || 'Not provided'}%
-Exit Cap Rate: ${inputs.exitCap || 'Not provided'}%
-Investment Strategy: ${inputs.strategy || 'Not provided'}
+Asking Price: $${inputs?.askingPrice || 'Not provided'}
+Target Hold Period: ${inputs?.targetHold || 'Not provided'} years
+Target IRR: ${inputs?.targetIRR || 'Not provided'}%
+Target Equity Multiple: ${inputs?.targetEM || 'Not provided'}x
+Leverage: ${inputs?.leverage || 'Not provided'}%
+Interest Rate: ${inputs?.interestRate || 'Not provided'}%
+Exit Cap Rate: ${inputs?.exitCap || 'Not provided'}%
+Investment Strategy: ${inputs?.strategy || 'Not provided'}
 
 ${fileName ? `Document Name: ${fileName}` : 'No document provided'}
 
@@ -111,21 +134,24 @@ Format the response in markdown with clear sections and bullet points.`;
     
     if (fileData && fileName) {
       console.log('Processing PDF with multimodal input...');
-      // Send PDF data to Gemini for analysis
-      result = await model.generateContent([
-        {
-          text: prompt + '\n\nPlease analyze the uploaded PDF document along with the investment parameters provided above.'
-        },
-        {
-          inlineData: {
-            mimeType: 'application/pdf',
-            data: fileData
+      try {
+        result = await model.generateContent([
+          {
+            text: prompt + '\n\nPlease analyze the uploaded PDF document along with the investment parameters provided above.'
+          },
+          {
+            inlineData: {
+              mimeType: 'application/pdf',
+              data: fileData
+            }
           }
-        }
-      ]);
+        ]);
+      } catch (pdfError) {
+        console.error('PDF processing failed, falling back to text-only:', pdfError);
+        result = await model.generateContent(prompt);
+      }
     } else {
       console.log('Processing text-only input...');
-      // Standard text-only analysis
       result = await model.generateContent(prompt);
     }
     
@@ -140,8 +166,11 @@ Format the response in markdown with clear sections and bullet points.`;
 
   } catch (error) {
     console.error('Function error:', error);
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
     
+    // Return demo analysis on any error
     return {
       statusCode: 200,
       headers,
@@ -181,7 +210,7 @@ Format the response in markdown with clear sections and bullet points.`;
 **Recommendation:**
 Proceed with detailed due diligence. Property shows strong fundamentals with clear value-add path.
 
-*Note: Demo analysis shown due to API error. Error: ${error.message}*`
+*Note: Demo analysis shown due to function error. Error: ${error.message}*`
       })
     };
   }
