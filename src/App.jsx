@@ -358,6 +358,7 @@ Proceed with detailed due diligence. Property shows strong fundamentals with cle
                             </div>
                           )}
                           <p className="text-xs text-gray-500 mt-2">Upload offering memorandum for AI analysis (optional).</p>
+                          <p className="text-xs text-gray-500 mt-2">Upload offering memorandum for AI analysis.</p>
                         </div>
                       </div>
                     </div>
