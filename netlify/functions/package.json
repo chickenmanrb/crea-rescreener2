@@ -1,0 +1,9 @@
+{
+  "name": "netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for Real Estate Screening Tool",
+  "main": "analyze.js",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1"
+  }
+}

@@ -1,4 +1,13 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+// Import using dynamic import for ES modules compatibility
+let GoogleGenerativeAI;
+
+async function initializeGemini() {
+  if (!GoogleGenerativeAI) {
+    const module = await import('@google/generative-ai');
+    GoogleGenerativeAI = module.GoogleGenerativeAI;
+  }
+  return GoogleGenerativeAI;
+}
 
 exports.handler = async (event, context) => {
   // Handle CORS
@@ -76,8 +85,9 @@ Proceed with detailed due diligence. Property shows strong fundamentals with cle
       };
     }
 
-    // Initialize Gemini AI
-    const genAI = new GoogleGenerativeAI(apiKey);
+    // Initialize Gemini AI with dynamic import
+    const GoogleAI = await initializeGemini();
+    const genAI = new GoogleAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Create analysis prompt
