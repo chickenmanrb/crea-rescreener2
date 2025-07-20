@@ -19,3 +19,4 @@
 [functions]
   # Directory for Netlify Functions
   directory = "netlify/functions"
+  edge_functions = false
