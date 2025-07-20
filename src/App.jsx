@@ -88,7 +88,7 @@ const REScreeningTool = () => {
     if (inputs.uploadedFile) {
       try {
         console.log('Sending request to analyze function...');
-        const response = await fetch('/api/analyze', {
+        const response = await fetch('/.netlify/functions/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
