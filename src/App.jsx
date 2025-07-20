@@ -80,14 +80,10 @@ const REScreeningTool = () => {
     };
   };
 
-  const performAnalysis = async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    // Generate PDF analysis based on uploaded file
-    let pdfAnalysis;
-    if (inputs.uploadedFile) {
-      pdfAnalysis = `**Document Analysis**
+  const generatePDFAnalysis = (fileName) => {
+    // Generate demo analysis based on uploaded file
+    if (fileName) {
+      return `**Document Analysis for ${fileName}**
 
 **Property Overview:**
 - Multi-family residential property
@@ -122,11 +118,20 @@ const REScreeningTool = () => {
 **Recommendation:**
 Proceed with detailed due diligence. Property shows strong fundamentals with clear value-add path. Consider sensitivity analysis on renovation costs and timeline.
 
-*Note: This is a demo analysis. For full AI-powered document analysis, integrate with Google's Gemini API or similar service.*`;
+*Note: This is a demo analysis for educational purposes.*`;
     } else {
-      pdfAnalysis = "No document was uploaded for analysis.";
+      return "No document was uploaded for analysis.";
     }
+  };
 
+  const performAnalysis = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    // Simulate processing time
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const pdfAnalysis = generatePDFAnalysis(inputs.uploadedFile?.name);
     const returns = calculateReturns();
     const targetIRR = parseFloat(inputs.targetIRR) || 15;
     const targetEM = parseFloat(inputs.targetEM) || 1.8;
@@ -177,7 +182,7 @@ Proceed with detailed due diligence. Property shows strong fundamentals with cle
     }
 
     try {
-      // Convert PDF to base64 for server-side processing
+      // Convert PDF to base64 for demo purposes
       const fileData = await convertPDFToBase64(file);
       
       setInputs(prev => ({
