@@ -132,36 +132,8 @@ Proceed with detailed due diligence. Property shows strong fundamentals with cle
       // Simulate processing time
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      let pdfAnalysis;
-      
-      // Call the Netlify function for PDF analysis
-      if (inputs.uploadedFile) {
-        try {
-          const response = await fetch('/.netlify/functions/analyze', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              fileName: inputs.uploadedFile.name,
-              fileData: inputs.uploadedFile.fileData,
-              inputs: inputs
-            })
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            pdfAnalysis = data.analysis;
-          } else {
-            throw new Error(`API call failed: ${response.status}`);
-          }
-        } catch (apiError) {
-          console.warn('API call failed, using fallback:', apiError);
-          pdfAnalysis = generatePDFAnalysis(inputs.uploadedFile.name);
-        }
-      } else {
-        pdfAnalysis = generatePDFAnalysis(null);
-      }
+      // Generate demo analysis based on uploaded file
+      const pdfAnalysis = generatePDFAnalysis(inputs.uploadedFile?.name || null);
       
       const returns = calculateReturns();
       const targetIRR = parseFloat(inputs.targetIRR) || 15;
