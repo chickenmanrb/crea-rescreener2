@@ -1,0 +1,17 @@
+# This file goes in the root of your project
+# It tells Netlify how to build and deploy your site
+
+[dev]
+  framework = "#static"
+  targetPort = 5173
+  edge_functions = false
+
+[build]
+  # This is the command to build your React app
+  command = "npm run build"
+  # This is the directory that contains your built site
+  publish = "dist"
+
+[functions]
+  # Directory for Netlify Functions
+  directory = "netlify/functions"
