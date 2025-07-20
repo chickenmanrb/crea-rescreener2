@@ -1,13 +1,4 @@
-// Import using dynamic import for ES modules compatibility
-let GoogleGenerativeAI;
-
-async function initializeGemini() {
-  if (!GoogleGenerativeAI) {
-    const module = await import('@google/generative-ai');
-    GoogleGenerativeAI = module.GoogleGenerativeAI;
-  }
-  return GoogleGenerativeAI;
-}
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 exports.handler = async (event, context) => {
   // Handle CORS
@@ -40,6 +31,7 @@ exports.handler = async (event, context) => {
     // Check if API key is configured
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
+      console.log('No GEMINI_API_KEY found, returning demo analysis');
       // Return demo analysis if no API key
       return {
         statusCode: 200,
@@ -85,32 +77,25 @@ Proceed with detailed due diligence. Property shows strong fundamentals with cle
       };
     }
 
-    // Initialize Gemini AI with dynamic import
-    const GoogleAI = await initializeGemini();
-    const genAI = new GoogleAI(apiKey);
+    console.log('Initializing Gemini AI...');
+    // Initialize Gemini AI
+    const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Create analysis prompt
     let prompt = `Analyze this real estate investment opportunity based on the following parameters:
 
-Asking Price: $${inputs.askingPrice}
-Target Hold Period: ${inputs.targetHold} years
-Target IRR: ${inputs.targetIRR}%
-Target Equity Multiple: ${inputs.targetEM}x
-Leverage: ${inputs.leverage}%
-Interest Rate: ${inputs.interestRate}%
-Exit Cap Rate: ${inputs.exitCap}%
-Investment Strategy: ${inputs.strategy}
+Asking Price: $${inputs.askingPrice || 'Not provided'}
+Target Hold Period: ${inputs.targetHold || 'Not provided'} years
+Target IRR: ${inputs.targetIRR || 'Not provided'}%
+Target Equity Multiple: ${inputs.targetEM || 'Not provided'}x
+Leverage: ${inputs.leverage || 'Not provided'}%
+Interest Rate: ${inputs.interestRate || 'Not provided'}%
+Exit Cap Rate: ${inputs.exitCap || 'Not provided'}%
+Investment Strategy: ${inputs.strategy || 'Not provided'}
 
-${fileName ? `Document Name: ${fileName}` : 'No document provided'}`;
+${fileName ? `Document Name: ${fileName}` : 'No document provided'}
 
-    // If we have PDF data, process it with Gemini's multimodal capabilities
-    if (fileData && fileName) {
-      prompt += `\n\nUploaded Document: ${fileName}
-I have uploaded a PDF document that contains details about this real estate investment opportunity. Please analyze the document content along with the investment parameters provided above.`;
-    }
-
-    prompt += `
 Please provide a comprehensive real estate investment analysis including:
 1. Property overview and key characteristics
 2. Financial highlights and performance metrics
@@ -119,18 +104,17 @@ Please provide a comprehensive real estate investment analysis including:
 5. Key risks and mitigation strategies
 6. Overall recommendation
 
-Format the response in markdown with clear sections and bullet points.
+Format the response in markdown with clear sections and bullet points.`;
 
-${fileData ? 'Base your analysis primarily on the uploaded PDF document content, supplemented by the investment parameters.' : 'Since no document was provided, base your analysis on the investment parameters and general market assumptions.'}`;
-
-    let result;    
+    console.log('Generating content with Gemini...');
+    let result;
+    
     if (fileData && fileName) {
-      // Convert base64 to binary for Gemini
-      const binaryData = Buffer.from(fileData, 'base64');
-      
+      console.log('Processing PDF with multimodal input...');
+      // Send PDF data to Gemini for analysis
       result = await model.generateContent([
         {
-          text: prompt
+          text: prompt + '\n\nPlease analyze the uploaded PDF document along with the investment parameters provided above.'
         },
         {
           inlineData: {
@@ -140,11 +124,13 @@ ${fileData ? 'Base your analysis primarily on the uploaded PDF document content,
         }
       ]);
     } else {
+      console.log('Processing text-only input...');
       // Standard text-only analysis
       result = await model.generateContent(prompt);
     }
     
     const analysis = result.response.text();
+    console.log('Analysis generated successfully');
 
     return {
       statusCode: 200,
@@ -154,6 +140,7 @@ ${fileData ? 'Base your analysis primarily on the uploaded PDF document content,
 
   } catch (error) {
     console.error('Function error:', error);
+    console.error('Error stack:', error.stack);
     
     return {
       statusCode: 200,
