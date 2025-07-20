@@ -132,8 +132,35 @@ Proceed with detailed due diligence. Property shows strong fundamentals with cle
       // Simulate processing time
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Generate demo analysis based on uploaded file
-      const pdfAnalysis = generatePDFAnalysis(inputs.uploadedFile?.name || null);
+      let pdfAnalysis;
+      
+      // Call the secure Netlify function for analysis
+      try {
+        console.log('Calling Netlify function for analysis...');
+        const response = await fetch('/.netlify/functions/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fileName: inputs.uploadedFile?.name || null,
+            inputs: inputs
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          pdfAnalysis = data.analysis;
+          console.log('Successfully received analysis from Netlify function');
+        } else {
+          const errorText = await response.text();
+          console.error('Netlify function error:', response.status, errorText);
+          throw new Error(`Function call failed: ${response.status}`);
+        }
+      } catch (apiError) {
+        console.warn('Netlify function call failed, using fallback:', apiError);
+        pdfAnalysis = generatePDFAnalysis(inputs.uploadedFile?.name);
+      }
       
       const returns = calculateReturns();
       const targetIRR = parseFloat(inputs.targetIRR) || 15;
@@ -170,6 +197,50 @@ Proceed with detailed due diligence. Property shows strong fundamentals with cle
       setError('Analysis failed. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const generatePDFAnalysis = (fileName) => {
+    // Fallback analysis generator (kept for error recovery)
+    if (fileName) {
+      return `**Document Analysis for ${fileName}**
+
+**Property Overview:**
+- Multi-family residential property
+- Located in prime urban submarket  
+- 150 units across 3 buildings
+- Built in 1985, recently renovated common areas
+
+**Financial Highlights:**
+- Current NOI: $2.1M annually
+- Average rent: $1,850/month
+- Occupancy rate: 94%
+- Operating expense ratio: 42%
+
+**Market Analysis:**
+- Submarket rent growth: 4.2% annually
+- Low vacancy rates (2.8% average)
+- Strong employment fundamentals
+- Limited new supply pipeline
+
+**Investment Thesis:**
+- Value-add opportunity through unit renovations
+- Potential 15-20% rent increases post-renovation
+- Strong cash flow profile with upside potential
+- Defensive asset class in current market
+
+**Key Risks:**
+- Capital expenditure requirements
+- Regulatory rent control considerations
+- Interest rate sensitivity
+- Market saturation risk
+
+**Recommendation:**
+Proceed with detailed due diligence. Property shows strong fundamentals with clear value-add path. Consider sensitivity analysis on renovation costs and timeline.
+
+*Note: This is a fallback analysis for demonstration purposes.*`;
+    } else {
+      return "No document was uploaded for analysis.";
     }
   };
 
