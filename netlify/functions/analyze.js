@@ -39,11 +39,11 @@ exports.handler = async (event, context) => {
   // Section 3: Securely Accessing the API Key
   // The key is retrieved from the function's runtime environment variables
   // This variable must be set in the Netlify UI with the "Functions" scope
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
   console.log('API key configured:', !!GEMINI_API_KEY);
 
   if (!GEMINI_API_KEY) {
-    console.error('GEMINI_API_KEY not found in environment variables');
+    console.error('VITE_GEMINI_API_KEY not found in environment variables');
     return {
       statusCode: 500,
       headers: {
@@ -51,7 +51,7 @@ exports.handler = async (event, context) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ 
-        error: 'API key not configured. Please set GEMINI_API_KEY in Netlify environment variables with Functions scope.' 
+        error: 'API key not configured. Please set VITE_GEMINI_API_KEY in Netlify environment variables with Functions scope.' 
       })
     };
   }
