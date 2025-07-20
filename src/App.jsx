@@ -218,7 +218,7 @@ Proceed with detailed due diligence. Property shows strong fundamentals with cle
     }
 
     try {
-      // Convert PDF to base64 for demo purposes
+      // Convert PDF to base64 for server processing
       const fileData = await convertPDFToBase64(file);
       
       setInputs(prev => ({

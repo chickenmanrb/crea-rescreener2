@@ -81,7 +81,7 @@ Proceed with detailed due diligence. Property shows strong fundamentals with cle
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Create analysis prompt
-    const prompt = `Analyze this real estate investment opportunity based on the following parameters:
+    let prompt = `Analyze this real estate investment opportunity based on the following parameters:
 
 Asking Price: $${inputs.askingPrice}
 Target Hold Period: ${inputs.targetHold} years
@@ -92,8 +92,15 @@ Interest Rate: ${inputs.interestRate}%
 Exit Cap Rate: ${inputs.exitCap}%
 Investment Strategy: ${inputs.strategy}
 
-${fileName ? `Document Name: ${fileName}` : 'No document provided'}
+${fileName ? `Document Name: ${fileName}` : 'No document provided'}`;
 
+    // If we have PDF data, process it with Gemini's multimodal capabilities
+    if (fileData && fileName) {
+      prompt += `\n\nUploaded Document: ${fileName}
+I have uploaded a PDF document that contains details about this real estate investment opportunity. Please analyze the document content along with the investment parameters provided above.`;
+    }
+
+    prompt += `
 Please provide a comprehensive real estate investment analysis including:
 1. Property overview and key characteristics
 2. Financial highlights and performance metrics
@@ -102,9 +109,31 @@ Please provide a comprehensive real estate investment analysis including:
 5. Key risks and mitigation strategies
 6. Overall recommendation
 
-Format the response in markdown with clear sections and bullet points.`;
+Format the response in markdown with clear sections and bullet points.
 
-    const result = await model.generateContent(prompt);
+${fileData ? 'Base your analysis primarily on the uploaded PDF document content, supplemented by the investment parameters.' : 'Since no document was provided, base your analysis on the investment parameters and general market assumptions.'}`;
+
+    let result;    
+    if (fileData && fileName) {
+      // Convert base64 to binary for Gemini
+      const binaryData = Buffer.from(fileData, 'base64');
+      
+      result = await model.generateContent([
+        {
+          text: prompt
+        },
+        {
+          inlineData: {
+            mimeType: 'application/pdf',
+            data: fileData
+          }
+        }
+      ]);
+    } else {
+      // Standard text-only analysis
+      result = await model.generateContent(prompt);
+    }
+    
     const analysis = result.response.text();
 
     return {
