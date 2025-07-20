@@ -202,7 +202,12 @@ Recommend proceeding with comprehensive due diligence and market analysis to val
 
       setAnalysis({
         returns,
-        returnFeasibility,
+      // Use deployed function URL for development
+      const functionUrl = import.meta.env.DEV 
+        ? 'https://merry-blancmange-29b5cd.netlify.app/.netlify/functions/analyze'
+        : '/.netlify/functions/analyze';
+        
+      const response = await fetch(functionUrl, {
         mandateFit,
         recommendation,
         targetIRR,
