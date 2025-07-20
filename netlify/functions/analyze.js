@@ -1,5 +1,3 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-
 exports.handler = async (event, context) => {
   // Set CORS headers
   const headers = {
@@ -52,16 +50,69 @@ exports.handler = async (event, context) => {
     }
 
     // Check if API key is configured
-    const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
     console.log('API key available:', !!apiKey);
     
     if (!apiKey) {
+      console.log('No API key found, returning fallback analysis');
+      const fallbackAnalysis = `**Document Analysis (Demo Mode)**
+
+**Property Overview:**
+- Document uploaded successfully for analysis
+- PDF contains ${Math.floor(fileData.length / 1000)} KB of data
+- Analysis requires GEMINI_API_KEY configuration
+
+**Setup Instructions:**
+1. Go to your Netlify dashboard
+2. Navigate to Site settings > Environment variables
+3. Add GEMINI_API_KEY with your Google AI API key
+4. Redeploy the site
+
+**Demo Analysis:**
+This appears to be a real estate offering memorandum. In full mode, this tool would analyze:
+- Property details and location
+- Financial performance metrics
+- Market comparables and trends
+- Investment risks and opportunities
+- Recommended due diligence items
+
+To enable full AI analysis, please configure the GEMINI_API_KEY environment variable.`;
+
       return {
-        statusCode: 500,
+        statusCode: 200,
         headers,
-        body: JSON.stringify({ 
-          error: 'GEMINI_API_KEY not configured in Netlify environment variables. Please add it in your Netlify dashboard under Site settings > Environment variables.' 
-        }),
+        body: JSON.stringify({ analysis: fallbackAnalysis }),
+      };
+    }
+
+    console.log('Attempting to load Google Generative AI');
+    
+    // Try to load the Google Generative AI package
+    let GoogleGenerativeAI;
+    try {
+      const genAI = require('@google/generative-ai');
+      GoogleGenerativeAI = genAI.GoogleGenerativeAI;
+    } catch (importError) {
+      console.error('Failed to import Google Generative AI:', importError);
+      
+      const errorAnalysis = `**Document Analysis (Import Error)**
+
+**Error Details:**
+- Failed to load Google Generative AI package
+- This may be due to missing dependencies in the serverless environment
+
+**Fallback Analysis:**
+- Document received: ${Math.floor(fileData.length / 1000)} KB PDF
+- To enable full AI analysis, ensure @google/generative-ai is properly installed
+- Consider using a different deployment method or contact support
+
+**Technical Details:**
+${importError.message}`;
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ analysis: errorAnalysis }),
       };
     }
 
@@ -126,13 +177,28 @@ Provide a detailed but concise analysis that would be useful for an investment c
       statusCode = 403;
     }
 
+    // Always return a 200 with error details to avoid Netlify's generic error page
+    const fallbackAnalysis = `**Document Analysis (Error)**
+
+**Error Details:**
+- ${errorMessage}
+- Technical error: ${error.message}
+
+**Fallback Analysis:**
+- Document received: ${Math.floor((event.body?.length || 0) / 1000)} KB of data
+- PDF analysis requires proper API configuration
+- Please check environment variables and try again
+
+**Next Steps:**
+1. Verify GEMINI_API_KEY is set in Netlify environment variables
+2. Ensure API key has proper permissions
+3. Check API quota limits
+4. Contact support if issues persist`;
+
     return {
-      statusCode,
+      statusCode: 200,
       headers,
-      body: JSON.stringify({ 
-        error: errorMessage,
-        details: error.message 
-      }),
+      body: JSON.stringify({ analysis: fallbackAnalysis }),
     };
   }
 };
